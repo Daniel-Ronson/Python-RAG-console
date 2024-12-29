@@ -1,9 +1,9 @@
 from typing import List
 from openai import OpenAI
 from langchain_community.chat_models import ChatOpenAI
-from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
 from opensearchpy import OpenSearch
+from colorama import Fore, Style
 
 from src.config.settings import (
     OPENAI_API_KEY,
@@ -32,28 +32,44 @@ class QAService:
         )
 
     def _search_similar_chunks(self, question: str) -> List[dict]:
-        """Search for similar chunks using the question embedding."""
-        # Get embedding for the question
+        """Search for similar chunks using hybrid search (KNN + text similarity)."""
         response = self.openai_client.embeddings.create(
             model=EMBEDDING_MODEL,
             input=question
         )
         question_embedding = response.data[0].embedding
 
-        # Search in OpenSearch using KNN query instead of script query
-        knn_query = {
-            "knn": {
-                "embedding": {
-                    "vector": question_embedding,
-                    "k": MAX_CHUNKS_PER_QUERY
-                }
+        # Combined query with both KNN and text search
+        hybrid_query = {
+            "bool": {
+                "should": [
+                    {
+                        "match": {
+                            "text_content": {
+                                "query": question,
+                                "fuzziness": "AUTO",
+                                "boost": 0.3
+                            }
+                        }
+                    },
+                    {
+                        "knn": {
+                            "embedding": {
+                                "vector": question_embedding,
+                                "k": MAX_CHUNKS_PER_QUERY,
+                                "boost": 0.7
+                            }
+                        }
+                    }
+                ]
             }
         }
 
         response = self.client.search(
             index=INDEX_NAME,
             body={
-                "query": knn_query,
+                "query": hybrid_query,
+                "size": MAX_CHUNKS_PER_QUERY,
                 "_source": ["text_content", "document_id", "page_number"]
             }
         )
@@ -66,7 +82,25 @@ class QAService:
         similar_chunks = self._search_similar_chunks(question)
         
         if not similar_chunks:
-            return "I couldn't find any relevant information to answer your question."
+            # Fallback to general knowledge with a disclaimer
+            prompt_template = """
+            The user asked a question but no relevant documents were found in the knowledge base.
+            Please provide a brief, general answer based on your knowledge.
+
+            Question: {question}
+
+            Answer:"""
+
+            prompt = PromptTemplate(
+                template=prompt_template,
+                input_variables=["question"]
+            )
+
+            response = self.llm.invoke(
+                prompt.format(question=question)
+            ).content
+
+            return f"{Fore.YELLOW}Note: No relevant documents found in the index. Providing a general answer:{Style.RESET_ALL}\n\n{response}"
 
         # Prepare context from chunks
         context = "\n\n".join([
@@ -92,19 +126,13 @@ class QAService:
             input_variables=["context", "question"]
         )
 
-        # Get answer from LLM
-        chain = RetrievalQA.from_chain_type(
-            llm=self.llm,
-            chain_type="stuff",
-            return_source_documents=True
-        )
-
-        response = self.llm.predict(
+        # Get answer from LLM using invoke instead of predict
+        response = self.llm.invoke(
             prompt.format(
                 context=context,
                 question=question
             )
-        )
+        ).content  # Add .content to get the string response
 
         # Add reference legend
         reference_legend = "\n\nReferences:"

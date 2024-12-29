@@ -1,6 +1,6 @@
 # Scientific Paper Parser
 
-A Python application that parses scientific papers (PDFs), indexes both text and chart/figure metadata, and provides question-answering capabilities with color-coded references in the console.
+A Pythonconsole application that ingests scientific papers (PDFs), indexes both text and chart/figure metadata in vector embeddings, and provides question-answering in the console.
 
 ## Features
 
@@ -50,9 +50,12 @@ A Python application that parses scientific papers (PDFs), indexes both text and
 1. Start the OpenSearch container:
     docker-compose up -d
 2. Run the application:
-    python main.py
+    python3 run.py
 3. Basic commands:
     `ingest <folder>`: Parse and index PDFs from a folder
-    `ask <question>`: Ask a question about the indexed papers
+    `ask <question>`: Ask a question about the indexed papers example: `ask What is a vector?`
     `help`: Show available commands
+    `status`: Show status of opensearch database documents
+    `reload`: Hot reload python code for local development
+    `invalidate <folder> *or* <filepath>`: Delete all chunks associated with a document
     `exit`: Exit the application

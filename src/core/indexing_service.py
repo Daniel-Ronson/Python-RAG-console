@@ -61,3 +61,79 @@ class IndexingService:
         
         if bulk_data:
             self.client.bulk(body=bulk_data) 
+
+    def get_index_stats(self) -> dict:
+        """Get statistics about the index."""
+        try:
+            stats = self.client.indices.stats(index=INDEX_NAME)
+            total = stats['indices'][INDEX_NAME]['total']
+            return {
+                'doc_count': total['docs']['count'],
+                'store_size': total['store']['size_in_bytes']
+            }
+        except Exception as e:
+            raise Exception(f"Failed to get index stats: {str(e)}")
+
+    def get_sample_documents(self, size: int = 5) -> list:
+        """Get a sample of documents from the index."""
+        try:
+            response = self.client.search(
+                index=INDEX_NAME,
+                body={
+                    "query": {"match_all": {}},
+                    "size": size,
+                    "sort": [{"_doc": "desc"}]  # Random sort
+                }
+            )
+            return response['hits']['hits']
+        except Exception as e:
+            raise Exception(f"Failed to get sample documents: {str(e)}") 
+
+    def check_existing_checksums(self, checksums: List[str]) -> set:
+        """Check which checksums from the provided list already exist in the index."""
+        try:
+            response = self.client.search(
+                index=INDEX_NAME,
+                body={
+                    "size": 0,
+                    "query": {
+                        "terms": {
+                            "checksum": checksums
+                        }
+                    },
+                    "aggs": {
+                        "existing_checksums": {
+                            "terms": {
+                                "field": "checksum",
+                                "size": len(checksums)
+                            }
+                        }
+                    }
+                }
+            )
+            return {bucket['key'] for bucket in response['aggregations']['existing_checksums']['buckets']}
+        except Exception as e:
+            print(f"Warning: Could not check checksums: {str(e)}")
+            return set() 
+
+    def delete_by_document_ids(self, document_ids: List[str]) -> dict:
+        """Delete all chunks associated with given document IDs."""
+        try:
+            response = self.client.delete_by_query(
+                index=INDEX_NAME,
+                body={
+                    "query": {
+                        "terms": {
+                            "document_id": document_ids
+                        }
+                    }
+                },
+                refresh=True  # Ensure deletion is immediately visible
+            )
+            
+            return {
+                'total_deleted': response['deleted'],
+                'total_failed': response['failures']
+            }
+        except Exception as e:
+            raise Exception(f"Failed to delete documents: {str(e)}") 
