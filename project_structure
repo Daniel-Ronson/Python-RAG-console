@@ -1,0 +1,27 @@
+scientific_paper_parser/
+├── .env
+├── .gitignore
+├── docker-compose.yml
+├── Dockerfile
+├── requirements.txt
+├── README.md
+└── src/
+    ├── __init__.py
+    ├── main.py
+    ├── config/
+    │   ├── __init__.py
+    │   └── settings.py
+    ├── core/
+    │   ├── __init__.py
+    │   ├── pdf_parser.py
+    │   ├── chart_analyzer.py
+    │   ├── embedding_service.py
+    │   ├── indexing_service.py
+    │   └── qa_service.py
+    ├── models/
+    │   ├── __init__.py
+    │   └── chunk.py
+    └── utils/
+        ├── __init__.py
+        ├── color_coding.py
+        └── console.py 
