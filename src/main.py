@@ -61,13 +61,13 @@ class CLI:
                 print(f"{Fore.RED}Error: Folder does not exist{Style.RESET_ALL}")
                 return
 
-            pdf_files = list(folder.glob("*.pdf"))
+            pdf_files: List[Path] = list(folder.glob("*.pdf"))
             if not pdf_files:
                 print(f"{Fore.YELLOW}No PDF files found in the folder{Style.RESET_ALL}")
                 return
 
             # Calculate checksums first
-            file_checksums = {
+            file_checksums: dict[Path, str] = {
                 pdf_file: self.pdf_parser.compute_checksum(pdf_file) 
                 for pdf_file in pdf_files
             }
@@ -76,11 +76,13 @@ class CLI:
             existing_checksums = self.indexing_service.check_existing_checksums(list(file_checksums.values()))
 
             # Separate new and skipped files
-            new_pdfs = [
+            new_pdfs: List[Path] = [
                 pdf_file for pdf_file, checksum in file_checksums.items() 
                 if checksum not in existing_checksums
             ]
-            skipped_pdfs = [
+
+            # Get the checksums of the existing PDFs, we can remove this later since its not really used
+            skipped_pdfs: List[str] = [
                 pdf_file.name for pdf_file, checksum in file_checksums.items() 
                 if checksum in existing_checksums
             ]
@@ -104,8 +106,11 @@ class CLI:
             
             for pdf_file in tqdm(new_pdfs, desc="Processing PDFs"):
                 try:
-                    # Parse PDF into chunks
-                    chunks = self.pdf_parser.parse_pdf(pdf_file)
+                    # Use the pre-computed checksum from file_checksums
+                    chunks = self.pdf_parser.parse_pdf(
+                        pdf_file, 
+                        file_checksums[pdf_file]
+                    )
                     
                     # Generate embeddings for chunks
                     chunks = self.embedding_service.embed_chunks(chunks)

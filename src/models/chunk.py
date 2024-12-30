@@ -4,7 +4,7 @@ from typing import List, Optional
 @dataclass
 class ParagraphChunk:
     document_id: str
-    checksum: str
+    documentChecksum: str
     is_chart: bool
     page_number: int
     paragraph_or_chart_index: str

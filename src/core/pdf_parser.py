@@ -3,6 +3,8 @@ from pathlib import Path
 import fitz  # PyMuPDF
 from typing import List
 from src.models.chunk import ParagraphChunk
+from src.config.settings import EMBEDDING_MODEL 
+import re as regex
 
 class PDFParser:
     def __init__(self):
@@ -17,28 +19,46 @@ class PDFParser:
                 md5_hash.update(chunk)
         return md5_hash.hexdigest()
 
-    def parse_pdf(self, file_path: Path) -> List[ParagraphChunk]:
+    def parse_pdf(self, file_path: Path, document_checksum: str) -> List[ParagraphChunk]:
         """Parse a PDF file and return a list of chunks."""
         self.current_document_id = file_path.name
-        self.current_checksum = self.compute_checksum(file_path)
+        self.current_checksum = document_checksum
         chunks = []
 
         doc = fitz.open(file_path)
         for page_num, page in enumerate(doc, 1):
-            # Extract text
-            text = page.get_text()
-            paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+            # Extract text with better formatting preservation
+            text = page.get_text("text")  # Use "text" format instead of default
+            
+            # Split into paragraphs more robustly
+            paragraphs = []
+            current_paragraph = []
+            
+            for line in text.split('\n'):
+                line = line.strip()
+                if line:  # If line is not empty
+                    current_paragraph.append(line)
+                elif current_paragraph:  # Empty line and we have content
+                    paragraphs.append(' '.join(current_paragraph))
+                    current_paragraph = []
+            
+            # Don't forget the last paragraph
+            if current_paragraph:
+                paragraphs.append(' '.join(current_paragraph))
+            
+            # Filter out any empty paragraphs
+            paragraphs = [p for p in paragraphs if p.strip()]
             
             # Create chunks for text paragraphs
             for idx, paragraph in enumerate(paragraphs):
                 chunk = ParagraphChunk(
                     document_id=self.current_document_id,
-                    checksum=self.current_checksum,
+                    documentChecksum=self.current_checksum,
                     is_chart=False,
                     page_number=page_num,
                     paragraph_or_chart_index=f"p{idx}",
                     text_content=paragraph,
-                    embedding_model="text-embedding-ada-002"
+                    embedding_model=EMBEDDING_MODEL
                 )
                 chunks.append(chunk)
 
@@ -47,12 +67,12 @@ class PDFParser:
             for img_idx, img in enumerate(image_list):
                 chunk = ParagraphChunk(
                     document_id=self.current_document_id,
-                    checksum=self.current_checksum,
+                    documentChecksum=self.current_checksum,
                     is_chart=True,
                     page_number=page_num,
                     paragraph_or_chart_index=f"chart-{img_idx}",
                     text_content=f"Chart or figure found on page {page_num}",
-                    embedding_model="text-embedding-ada-002"
+                    embedding_model=EMBEDDING_MODEL
                 )
                 chunks.append(chunk)
 

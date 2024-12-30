@@ -43,3 +43,4 @@ logs/
 *.pdf
 *.log
 temp/ 
+instructions.md

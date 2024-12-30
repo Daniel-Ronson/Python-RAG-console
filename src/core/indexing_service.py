@@ -26,7 +26,7 @@ class IndexingService:
                 "mappings": {
                     "properties": {
                         "document_id": {"type": "keyword"},
-                        "checksum": {"type": "keyword"},
+                        "documentChecksum": {"type": "keyword"},
                         "is_chart": {"type": "boolean"},
                         "page_number": {"type": "integer"},
                         "paragraph_or_chart_index": {"type": "keyword"},
@@ -49,7 +49,7 @@ class IndexingService:
                 {"index": {"_index": INDEX_NAME}},
                 {
                     "document_id": chunk.document_id,
-                    "checksum": chunk.checksum,
+                    "documentChecksum": chunk.documentChecksum,
                     "is_chart": chunk.is_chart,
                     "page_number": chunk.page_number,
                     "paragraph_or_chart_index": chunk.paragraph_or_chart_index,
@@ -98,13 +98,13 @@ class IndexingService:
                     "size": 0,
                     "query": {
                         "terms": {
-                            "checksum": checksums
+                            "documentChecksum": checksums
                         }
                     },
                     "aggs": {
                         "existing_checksums": {
                             "terms": {
-                                "field": "checksum",
+                                "field": "documentChecksum",
                                 "size": len(checksums)
                             }
                         }
