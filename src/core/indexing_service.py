@@ -98,13 +98,13 @@ class IndexingService:
                     "size": 0,
                     "query": {
                         "terms": {
-                            "documentChecksum": checksums
+                            "documentChecksum.keyword": checksums
                         }
                     },
                     "aggs": {
                         "existing_checksums": {
                             "terms": {
-                                "field": "documentChecksum",
+                                "field": "documentChecksum.keyword",
                                 "size": len(checksums)
                             }
                         }
