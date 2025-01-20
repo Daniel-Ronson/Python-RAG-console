@@ -41,8 +41,6 @@ A console application that ingests scientific papers (PDFs) and allows you to as
  ### You can verify opensearch is running with this command: ```curl http://localhost:9200```
  ### Access OpenSearch Dashboards: Open a web browser and navigate to: ```http://localhost:5601/app/home```
 
-5. Run the application:
-    python main.py
 
 
 ## Usage
