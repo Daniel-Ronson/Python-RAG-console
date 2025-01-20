@@ -20,19 +20,7 @@ class CLI:
         self.command_history = []
         
         # Configure readline with all standard bindings
-        readline.parse_and_bind('"\e[A": previous-history')    # Up arrow
-        readline.parse_and_bind('"\e[B": next-history')       # Down arrow
-        readline.parse_and_bind('"\e[C": forward-char')       # Right arrow
-        readline.parse_and_bind('"\e[D": backward-char')      # Left arrow
-        readline.parse_and_bind('"\C-w": unix-word-rubout')   # Ctrl+W to delete word
-        readline.parse_and_bind('"\C-u": unix-line-discard')  # Ctrl+U to clear line
-        readline.parse_and_bind('"\C-a": beginning-of-line')  # Ctrl+A to start of line
-        readline.parse_and_bind('"\C-e": end-of-line')        # Ctrl+E to end of line
-        readline.parse_and_bind('set enable-keypad on')       # Enable keypad keys
-        readline.parse_and_bind('set input-meta on')          # Enable meta key
-        readline.parse_and_bind('set convert-meta off')       # Don't convert meta characters
-        readline.parse_and_bind('set output-meta on')         # Output meta characters as-is
-        readline.set_history_length(1000)                     # Set history size
+        self.configure_console_keyboard_shortcuts()
         
     def print_welcome(self):
         """Print welcome message and available commands."""
@@ -234,6 +222,27 @@ class CLI:
             print(f"{Fore.GREEN}Successfully reloaded {reloaded_count} modules!{Style.RESET_ALL}")
         except Exception as e:
             print(f"{Fore.RED}Error reloading services: {str(e)}{Style.RESET_ALL}")
+
+    def configure_console_keyboard_shortcuts(self):
+        """Configure readline bindings to give the CLI shortcuts in the console app. 
+        These are configured for macos and may not work on windows.
+        Known bug when deleting using cmd backspace cant delete whole command."""
+        if not readline:
+            return
+
+        try:
+            readline.parse_and_bind("tab: complete")
+            readline.parse_and_bind('"\e[A": previous-history')    # Up arrow
+            readline.parse_and_bind('"\e[B": next-history')       # Down arrow
+            readline.parse_and_bind('"\e[C": forward-char')       # Right arrow
+            readline.parse_and_bind('"\e[D": backward-char')      # Left arrow
+            readline.parse_and_bind('"\C-w": unix-word-rubout')   # Ctrl+W to delete word
+            readline.parse_and_bind('"\C-u": unix-line-discard')  # Ctrl+U to clear line
+            readline.parse_and_bind('"\C-a": beginning-of-line')  # Ctrl+A to start of line
+            readline.parse_and_bind('"\C-e": end-of-line')        # Ctrl+E to end of line
+            readline.set_history_length(1000)
+        except Exception as e:
+            print(f"Error configuring readline: {e}")
 
     def run(self):
         """Main loop for the CLI."""
