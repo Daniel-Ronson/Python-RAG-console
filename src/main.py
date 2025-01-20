@@ -2,10 +2,8 @@ import sys
 import readline
 from pathlib import Path
 from typing import List, Optional
-import click
 from colorama import init, Fore, Style
 from tqdm import tqdm
-import importlib
 
 from src.core import qa_service, pdf_parser, indexing_service, embedding_service
 from src.config.settings import IS_DEV

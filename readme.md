@@ -1,19 +1,18 @@
-# Scientific Paper Parser
+# Scientific Paper Parser 
 
-A Pythonconsole application that ingests scientific papers (PDFs), indexes both text and chart/figure metadata in vector embeddings, and provides question-answering in the console.
+A console application that ingests scientific papers (PDFs) and allows you to ask questions to an LLM with the relevant context from the papers you uploaded. This app indexes pdf text, metadata, and vector embeddings from a pdf and provides question-answering in the console.
 
 ## Features
 
-- PDF parsing with text and image extraction
+- Ingest PDF's and chunk text into vector embeddings (no image extraction yet)
 - Vector embeddings using OpenAI's API
-- Semantic search using OpenSearch
-- Question-answering capabilities using LangChain
-- Color-coded reference system in console output
+- Storage and Semantic search using OpenSearch
+- Ask an LLM a question - using OpenAi api
 
 ## Prerequisites
 
-- Python 3.9+
-- Docker and Docker Compose (for OpenSearch)
+- **Python 3.11+**
+- Docker (needed to run OpenSearch locally)
 - OpenAI API key
 
 ## Installation
@@ -21,8 +20,8 @@ A Pythonconsole application that ingests scientific papers (PDFs), indexes both 
 1. Clone the repository:
     git clone https://github.com/yourusername/scientific-paper-parser.git
 2. Create virtual env and Install dependencies:
-    `python -m venv venv`
-    `source venv/bin/activate`
+    `python -m venv myenv`
+    `source myenv/bin/activate`
     `pip install -r requirements.txt`
 3. Create and update `.env` which is a new file (excluded from version control) and populate it like so:
    ```ini
@@ -31,8 +30,8 @@ A Pythonconsole application that ingests scientific papers (PDFs), indexes both 
    OPENSEARCH_PORT=9200
    OPENSEARCH_USERNAME=admin
    OPENSEARCH_PASSWORD=admin
-   EMBEDDING_MODEL=""
-   COMPLETION_MODEL=""
+   EMBEDDING_MODEL=text-embedding-ada-002
+   COMPLETION_MODEL=gpt-3.5-turbo
    ```
 
 4. Build the Docker image for OpenSearch:
@@ -52,7 +51,7 @@ A Pythonconsole application that ingests scientific papers (PDFs), indexes both 
 2. Run the application:
     python3 run.py
 3. Basic commands:
-    `ingest <folder>`: Parse and index PDFs from a folder
+    `ingest <folder-path>`: Parse and index PDFs from a folder
     `ask <question>`: Ask a question about the indexed papers example: `ask What is a vector?`
     `help`: Show available commands
     `status`: Show status of opensearch database documents
