@@ -51,10 +51,10 @@ A console application that ingests scientific papers (PDFs) and allows you to as
 2. Run the application:
     python3 run.py
 3. Basic commands:
-    `ingest <folder-path>`: Parse and index PDFs from a folder
-    `ask <question>`: Ask a question about the indexed papers example: `ask What is a vector?`
-    `help`: Show available commands
-    `status`: Show status of opensearch database documents
-    `reload`: Hot reload python code for local development
-    `invalidate <folder> *or* <filepath>`: Delete all chunks associated with a document
-    `exit`: Exit the application
+    - `ingest <folder-path>`: Parse and index PDFs from a folder (example: `ingest /path/to/pdf/folder)
+    - `ask <question>`: Ask a question about the indexed papers (example: `ask What is a vector?`)
+    - `help`: Show available commands
+    - `status`: Show status of OpenSearch database documents
+    - `reload`: Hot reload Python code for local development
+    - `invalidate <folder> *or* <filepath>`: Delete all chunks associated with a document
+    - `exit`: Exit the application
