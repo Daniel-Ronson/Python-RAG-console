@@ -18,7 +18,7 @@ A console application that ingests scientific papers (PDFs) and allows you to as
 ## Installation
 
 1. Clone the repository:
-    git clone https://github.com/yourusername/scientific-paper-parser.git
+    git clone https://github.com/Daniel-Ronson/Python-RAG-console.git
 2. Create virtual env and Install dependencies:
     `python -m venv myenv`
     `source myenv/bin/activate`
