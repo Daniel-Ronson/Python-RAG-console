@@ -6,15 +6,11 @@ python-dotenv==1.0.0
 click==8.0.3
 
 # PDF Processing
-PyMuPDF==1.23.8  # Also known as fitz
+PyMuPDF==1.25.2  # Also known as fitz
 pdf2image==1.16.3
 
 # Vector Database
 opensearch-py==2.4.2
-
-# Data Processing & Analysis
-numpy==1.26.0
-pandas==2.1.0
 
 # LangChain specific dependencies
 chromadb==0.4.22
