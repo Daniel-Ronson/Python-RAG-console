@@ -18,7 +18,7 @@ A console application that ingests scientific papers (PDFs) and allows you to as
 ## Installation
 
 1. Clone the repository:
-    git clone https://github.com/yourusername/scientific-paper-parser.git
+    git clone https://github.com/Daniel-Ronson/Python-RAG-console.git
 2. Create virtual env and Install dependencies:
     `python -m venv myenv`
     `source myenv/bin/activate`
@@ -38,8 +38,8 @@ A console application that ingests scientific papers (PDFs) and allows you to as
  - docker pull opensearchproject/opensearch:2
  - docker pull opensearchproject/opensearch-dashboards:2
  - ```docker-compose up --build```
- ### You can verify opensearch is running with this command: ```curl http://localhost:9200```
- ### Access OpenSearch Dashboards: Open a web browser and navigate to: ```http://localhost:5601/app/home```
+ #### You can verify opensearch is running with this command: ```curl http://localhost:9200```
+ #### To access OpenSearch Dashboards: Open a web browser and navigate to: ```http://localhost:5601/app/home```
 
 
 
@@ -55,4 +55,5 @@ A console application that ingests scientific papers (PDFs) and allows you to as
     - `status`: Show status of OpenSearch database documents
     - `reload`: Hot reload Python code for local development
     - `invalidate <folder> *or* <filepath>`: Delete all chunks associated with a document
-    - `exit`: Exit the application
+    - `exit`: Exit the application  
+   **FYI:** You will `ingest` pdfs before you can `ask` questions about them
