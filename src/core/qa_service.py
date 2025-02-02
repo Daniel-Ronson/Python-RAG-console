@@ -85,7 +85,7 @@ class QAService:
             # Fallback to general knowledge with a disclaimer
             prompt_template = """
             The user asked a question but no relevant documents were found in the knowledge base.
-            Please provide a brief, general answer based on your knowledge.
+            Please provide a brief, general answer based on your knowledge. Let the user know that no personal documents were used to help answer their question
 
             Question: {question}
 
@@ -111,14 +111,17 @@ class QAService:
         # Prepare prompt
         prompt_template = """
         Answer the question based on the following context. Use the reference numbers [Ref1], [Ref2], etc. 
-        when citing information from the context. If you cannot answer the question based on the context, 
-        say so.
+        when citing information from the context or if the reference has the same information. If you cannot answer the question based on the context, 
+        say so and provide a general answer based on your knowledge.  Rememeber Always cite sources at the time you use them. provide an answer that is betwee n1 and 3 paragraphs.
+        Consider all the given sources, your own internal knowledge, and think critically about the information provided and the question before answering.
 
+
+        -------------------------
         Context:
         {context}
-
+        -------------------------
         Question: {question}
-
+        -------------------------
         Answer:"""
 
         prompt = PromptTemplate(
