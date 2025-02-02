@@ -39,7 +39,7 @@ class QAService:
         )
         question_embedding = response.data[0].embedding
 
-        # Combined query with both KNN and text search
+        # Optimized Hybrid Search Query
         hybrid_query = {
             "bool": {
                 "should": [
@@ -47,7 +47,8 @@ class QAService:
                         "match": {
                             "text_content": {
                                 "query": question,
-                                "fuzziness": "AUTO",
+                                "fuzziness": "1",  # Reduced fuzziness for stricter matching
+                                "operator": "AND",  # Require all terms to be present
                                 "boost": 0.3
                             }
                         }
@@ -61,7 +62,8 @@ class QAService:
                             }
                         }
                     }
-                ]
+                ],
+                "minimum_should_match": 1  # Ensures at least one strong match
             }
         }
 
@@ -70,11 +72,19 @@ class QAService:
             body={
                 "query": hybrid_query,
                 "size": MAX_CHUNKS_PER_QUERY,
-                "_source": ["text_content", "document_id", "page_number"]
+                "_source": ["text_content", "document_id", "page_number"],
+                "min_score": 0.7  # Filters out low-relevance results
             }
         )
 
-        return response['hits']['hits']
+        # Filter out weak matches from KNN results
+        filtered_results = [
+            hit for hit in response['hits']['hits']
+            if hit['_score'] >= 0.7  # Ensures we only return highly relevant matches
+        ]
+
+        return filtered_results
+
 
     def answer_question(self, question: str) -> str:
         """Answer a question using the indexed papers."""
