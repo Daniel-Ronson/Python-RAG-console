@@ -33,13 +33,14 @@ class QAService:
 
     def _search_similar_chunks(self, question: str) -> List[dict]:
         """Search for similar chunks using hybrid search (KNN + text similarity)."""
+        # Get the embedding for the input question
         response = self.openai_client.embeddings.create(
             model=EMBEDDING_MODEL,
             input=question
         )
         question_embedding = response.data[0].embedding
 
-        # Optimized Hybrid Search Query
+        # Build the hybrid query combining text match and KNN search
         hybrid_query = {
             "bool": {
                 "should": [
@@ -67,23 +68,29 @@ class QAService:
             }
         }
 
+        # Run the search query with min_score set to filter out low-relevance hits
         response = self.client.search(
             index=INDEX_NAME,
             body={
                 "query": hybrid_query,
                 "size": MAX_CHUNKS_PER_QUERY,
                 "_source": ["text_content", "document_id", "page_number"],
-                "min_score": 0.7  # Filters out low-relevance results
+                "min_score": 0.7  # OpenSearch returns only hits with _score >= 0.7
             }
         )
 
-        # Filter out weak matches from KNN results
-        filtered_results = [
-            hit for hit in response['hits']['hits']
-            if hit['_score'] >= 0.7  # Ensures we only return highly relevant matches
-        ]
+        results = response['hits']['hits']
 
-        return filtered_results
+        # Print out the first 50 characters of the text content for each result
+        print("\nRelevant text chunks found:")
+        for idx, hit in enumerate(results):
+            text_preview = hit['_source']['text_content'][:50] + "..."
+            print(f"\n[Chunk {idx+1}] Score: {hit['_score']:.2f}")
+            print(text_preview)
+        print("\n")
+
+        return results
+
 
 
     def answer_question(self, question: str) -> str:
