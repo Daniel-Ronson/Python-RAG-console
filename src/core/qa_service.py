@@ -85,12 +85,12 @@ class QAService:
         results = response['hits']['hits']
 
         # Print out the first 50 characters of the text content for each result
-        print("\nRelevant text chunks found:")
-        for idx, hit in enumerate(results):
-            text_preview = hit['_source']['text_content'][:50] + "..."
-            print(f"\n[Chunk {idx+1}] Score: {hit['_score']:.2f}")
-            print(text_preview)
-        print("\n")
+        # print("\nRelevant text chunks found:")
+        # for idx, hit in enumerate(results):
+        #     text_preview = hit['_source']['text_content'][:50] + "..."
+        #     print(f"\n[Chunk {idx+1}] Score: {hit['_score']:.2f}")
+        #     print(text_preview)
+        # print("\n")
 
         return results
 

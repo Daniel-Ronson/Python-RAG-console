@@ -1,15 +1,25 @@
 import hashlib
 from pathlib import Path
 import fitz  # PyMuPDF
-from typing import List
+from typing import List, Dict, Any
 from src.models.chunk import ParagraphChunk
-from src.config.settings import EMBEDDING_MODEL 
+from src.config.settings import EMBEDDING_MODEL, PDF_LOADER_TYPE
 import re as regex
+from .pdf_loaders.factory import PDFLoaderFactory
 
 class PDFParser:
     def __init__(self):
         self.current_document_id = None
         self.current_checksum = None
+        # Lazy load the appropriate loader only when needed
+        self._loader = None
+
+    @property
+    def loader(self):
+        """Lazy loader property that initializes the loader only when first accessed."""
+        if self._loader is None:
+            self._loader = PDFLoaderFactory.create(PDF_LOADER_TYPE)
+        return self._loader
 
     def compute_checksum(self, file_path: Path) -> str:
         """Compute MD5 checksum of a file."""
@@ -19,7 +29,20 @@ class PDFParser:
                 md5_hash.update(chunk)
         return md5_hash.hexdigest()
 
-    def parse_pdf(self, file_path: Path, document_checksum: str) -> List[ParagraphChunk]:
+    def parse_pdf(self, file_path: str) -> Dict[str, Any]:
+        """
+        Parse a PDF file using the configured loader.
+        Loader is initialized only when this method is called.
+        
+        Args:
+            file_path: Path to the PDF file
+            
+        Returns:
+            Processed document in standardized format
+        """
+        return self.loader.load(file_path)
+
+    def parse_pdf_old(self, file_path: Path, document_checksum: str) -> List[ParagraphChunk]:
         """Parse a PDF file and return a list of chunks."""
         self.current_document_id = file_path.name
         self.current_checksum = document_checksum

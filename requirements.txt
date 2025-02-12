@@ -25,4 +25,4 @@ pydantic==2.7.0
 
 # Optional but recommended for better performance
 sentence-transformers==2.2.2
-docling>=0.0.1 
+docling
