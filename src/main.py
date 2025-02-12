@@ -7,6 +7,7 @@ from tqdm import tqdm
 
 from src.core import qa_service, pdf_parser, indexing_service, embedding_service
 from src.config.settings import IS_DEV
+from src.core.profiling.memory_profiler import ApplicationProfiler
 
 # Initialize colorama for cross-platform colored output
 init()
@@ -313,12 +314,18 @@ class CLI:
 
 def main():
     """Entry point for the application."""
+    # Initialize profiler at startup
+    profiler = ApplicationProfiler(sampling_interval=5.0)
+    
     try:
         cli = CLI()
         cli.run()
     except Exception as e:
         print(f"{Fore.RED}Fatal error: {str(e)}{Style.RESET_ALL}")
         sys.exit(1)
+    finally:
+        # Ensure profiler shuts down cleanly
+        profiler.shutdown()
 
 if __name__ == "__main__":
     main() 

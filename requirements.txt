@@ -23,6 +23,10 @@ tqdm==4.66.1
 colorama>=0.4.6
 pydantic==2.7.0
 
-# Optional but recommended for better performance
+# convert pdf -> markdown
 sentence-transformers==2.2.2
 docling
+
+# memory profiling
+memory-profiler>=0.61.0
+psutil>=5.9.0
