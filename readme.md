@@ -30,8 +30,8 @@ A console application that ingests scientific papers (PDFs) and allows you to as
    OPENSEARCH_PORT=9200
    OPENSEARCH_USERNAME=admin
    OPENSEARCH_PASSWORD=admin
-   EMBEDDING_MODEL=text-embedding-ada-002
-   COMPLETION_MODEL=gpt-3.5-turbo
+   EMBEDDING_MODEL=text-embedding-3-small
+   COMPLETION_MODEL=gpt-4o-mini
    ```
 
 4. Build the Docker image for OpenSearch:

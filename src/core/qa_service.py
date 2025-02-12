@@ -1,9 +1,10 @@
 from typing import List
 from openai import OpenAI
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from opensearchpy import OpenSearch
 from colorama import Fore, Style
+import re
 
 from src.config.settings import (
     OPENAI_API_KEY,
@@ -30,6 +31,8 @@ class QAService:
             temperature=0,
             openai_api_key=OPENAI_API_KEY
         )
+        # Add colors list for cycling through reference colors
+        self.ref_colors = [Fore.CYAN, Fore.GREEN, Fore.YELLOW, Fore.MAGENTA, Fore.BLUE]
 
     def _search_similar_chunks(self, question: str) -> List[dict]:
         """Search for similar chunks using hybrid search (KNN + text similarity)."""
@@ -91,7 +94,27 @@ class QAService:
 
         return results
 
-
+    def _highlight_references(self, text: str) -> str:
+        """Highlight reference tags with cycling colors."""
+        # Find all unique reference numbers
+        pattern = r'\[Ref(\d+)\]'
+        matches = re.finditer(pattern, text)
+        
+        # Create a mapping of reference numbers to colors
+        ref_color_map = {}
+        for match in matches:
+            ref_num = int(match.group(1))
+            if ref_num not in ref_color_map:
+                ref_color_map[ref_num] = self.ref_colors[(ref_num - 1) % len(self.ref_colors)]
+        
+        # Apply colors to all references
+        result = text
+        for ref_num, color in sorted(ref_color_map.items(), reverse=True):
+            ref_tag = f'[Ref{ref_num}]'
+            colored_ref = f'{color}{ref_tag}{Style.RESET_ALL}'
+            result = result.replace(ref_tag, colored_ref)
+        
+        return result
 
     def answer_question(self, question: str) -> str:
         """Answer a question using the indexed papers."""
@@ -160,4 +183,5 @@ class QAService:
             source = hit['_source']
             reference_legend += f"\n[Ref{idx+1}] Document: {source['document_id']}, Page: {source['page_number']}"
 
-        return response + reference_legend 
+        response_with_refs = response + reference_legend
+        return self._highlight_references(response_with_refs) 

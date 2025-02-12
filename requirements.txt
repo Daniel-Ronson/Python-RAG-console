@@ -1,6 +1,7 @@
 # Core dependencies
 langchain==0.1.5
 langchain-core>=0.1.16
+langchain-openai>=0.0.1
 openai==1.59.8
 python-dotenv==1.0.0
 click==8.0.3
@@ -19,8 +20,9 @@ faiss-cpu==1.7.4
 
 # Utilities
 tqdm==4.66.1
-colorama
+colorama>=0.4.6
 pydantic==2.7.0
 
 # Optional but recommended for better performance
-sentence-transformers==2.2.2 
+sentence-transformers==2.2.2
+docling>=0.0.1 
