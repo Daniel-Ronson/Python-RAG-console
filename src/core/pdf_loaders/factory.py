@@ -14,6 +14,7 @@ class PDFLoaderFactory:
     """Factory for creating PDF loaders with lazy loading of dependencies."""
     
     _loader_instance: Optional[BasePDFLoader] = None
+    _current_loader_type: Optional[str] = None
     
     @classmethod
     def create(cls, loader_type: str) -> BasePDFLoader:
@@ -26,6 +27,7 @@ class PDFLoaderFactory:
             
         try:
             loader_enum = PDFLoaderType(loader_type.lower())
+            cls._current_loader_type = loader_enum.value  # Store the loader type
             
             if loader_enum == PDFLoaderType.FITZ:
                 # Lazy import fitz loader
@@ -41,8 +43,15 @@ class PDFLoaderFactory:
         except (KeyError, ValueError) as e:
             raise ValueError(f"Unsupported PDF loader type: {loader_type}") from e
         except ImportError as e:
-            raise ImportError(f"Required dependencies for {loader_type} loader not installed: {str(e)}")
-    
+            raise e
+
+    @classmethod
+    def get_loader_type(cls) -> str:
+        """Get the current loader type."""
+        if cls._current_loader_type is None:
+            raise ValueError("No loader has been created yet")
+        return cls._current_loader_type
+
     @staticmethod
     def _import_fitz_loader() -> Type[BasePDFLoader]:
         """Lazily import and return the Fitz loader class."""
@@ -65,4 +74,4 @@ class PDFLoaderFactory:
             return DoclingPDFLoader
         except ImportError as e:
             logger.error("Failed to import Docling loader: %s", str(e))
-            raise ImportError("Docling is required for this loader") from e 
+            raise e  # Re-raise the original ImportError

@@ -8,6 +8,7 @@ from tqdm import tqdm
 from src.core import qa_service, pdf_parser, indexing_service, embedding_service
 from src.config.settings import IS_DEV
 from src.core.profiling.memory_profiler import ApplicationProfiler
+from src.config import settings  # Import the settings module
 
 # Initialize colorama for cross-platform colored output
 init()
@@ -35,6 +36,7 @@ class CLI:
         print(f"{Fore.GREEN}ask <question>{Style.RESET_ALL} - Ask a question about the indexed papers")
         print(f"{Fore.GREEN}status{Style.RESET_ALL} - Show OpenSearch index statistics")
         print(f"{Fore.GREEN}help{Style.RESET_ALL} - Show this help message")
+        print(f"{Fore.GREEN}settings{Style.RESET_ALL} - Show current configuration")
         print(f"{Fore.GREEN}exit{Style.RESET_ALL} - Exit the application")
         if IS_DEV:
             print(f"{Fore.GREEN}reload{Style.RESET_ALL} - Hot reload python code for local development")
@@ -245,6 +247,38 @@ class CLI:
         except Exception as e:
             print(f"Error configuring readline: {e}")
 
+    def show_settings(self):
+        """Display current configurationsettings dynamically."""
+        print(f"\n{Fore.CYAN}Current Configuration:{Style.RESET_ALL}")
+        
+        # Get all uppercase variables from settings module (these are our config values)
+        # Exclude both PRIVATE_SETTINGS and the private settings themselves
+        config_items = {
+            name: value for name, value in vars(settings).items() 
+            if name.isupper() 
+            and not name.startswith('PRIVATE_')  # Exclude the PRIVATE_SETTINGS list itself
+            and name not in getattr(settings, 'PRIVATE_SETTINGS', set())  # Exclude the private settings
+        }
+        
+        # Group settings by common prefixes
+        groups = {}
+        for name, value in config_items.items():
+            # Get the prefix (e.g., 'OPENSEARCH' from 'OPENSEARCH_HOST')
+            prefix = name.split('_')[0] if '_' in name else 'MISC'
+            if prefix not in groups:
+                groups[prefix] = []
+            groups[prefix].append((name, value))
+        
+        # Print each group
+        for group_name, items in sorted(groups.items()):
+            print(f"\n{Fore.CYAN}{group_name} Settings:{Style.RESET_ALL}")
+            for name, value in sorted(items):
+                # Format the setting name to be more readable
+                setting_name = name.replace(f"{group_name}_", "").replace("_", " ").title()
+                print(f"  {setting_name}: {value}")
+        
+        print()
+
     def run(self):
         """Main loop for the CLI."""
         self.print_welcome()
@@ -300,6 +334,9 @@ class CLI:
                         print(f"{Fore.RED}Reload command is only available in development environment{Style.RESET_ALL}")
                         continue
                     self.reload_services()
+                    
+                elif cmd == "settings":
+                    self.show_settings()
                     
                 else:
                     print(f"{Fore.RED}Unknown command. Type 'help' for available commands.{Style.RESET_ALL}")

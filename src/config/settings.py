@@ -25,4 +25,11 @@ VECTOR_DIMENSION = 1536  # For Ada-002 embeddings
 MAX_CHUNKS_PER_QUERY = int(os.getenv('MAX_CHUNKS_PER_QUERY', '5'))
 
 # PDF Loader Configuration
-PDF_LOADER_TYPE = os.getenv('PDF_LOADER_TYPE', 'fitz')  # 'fitz' or 'docling' 
+PDF_LOADER_TYPE = os.getenv('PDF_LOADER_TYPE', 'docling')  # Default to fitz loader 
+
+# Define private settings that shouldn't be displayed
+PRIVATE_SETTINGS = {
+    'OPENAI_API_KEY',
+    'OPENSEARCH_PASSWORD',
+    'OPENSEARCH_USER',
+} 

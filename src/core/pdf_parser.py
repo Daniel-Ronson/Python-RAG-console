@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 from src.models.chunk import ParagraphChunk
 from src.config.settings import EMBEDDING_MODEL, PDF_LOADER_TYPE
 import re as regex
-from .pdf_loaders.factory import PDFLoaderFactory
+from .pdf_loaders.factory import PDFLoaderFactory, PDFLoaderType
 
 class PDFParser:
     def __init__(self):
@@ -29,18 +29,57 @@ class PDFParser:
                 md5_hash.update(chunk)
         return md5_hash.hexdigest()
 
-    def parse_pdf(self, file_path: str) -> Dict[str, Any]:
+    def parse_pdf(self, file_path: Path, document_checksum: str) -> List[ParagraphChunk]:
         """
         Parse a PDF file using the configured loader.
-        Loader is initialized only when this method is called.
         
         Args:
             file_path: Path to the PDF file
+            document_checksum: Checksum of the document
             
         Returns:
-            Processed document in standardized format
+            List of ParagraphChunks
         """
-        return self.loader.load(file_path)
+        self.current_document_id = file_path.name
+        self.current_checksum = document_checksum
+        
+        # Get the document data from the loader
+        doc_data = self.loader.load(str(file_path))
+        chunks = []
+        
+        # Get the loader type directly from the factory
+        loader_type = PDFLoaderFactory.get_loader_type()
+        
+        # Process each page from the loader output
+        for page in doc_data['pages']:
+            # Create text chunk
+            chunk = ParagraphChunk(
+                document_id=self.current_document_id,
+                documentChecksum=self.current_checksum,
+                is_chart=False,
+                page_number=page['number'],
+                paragraph_or_chart_index=f"p{page['number']}",
+                text_content=page['text'],
+                embedding_model=EMBEDDING_MODEL,
+                pdf_loader=loader_type
+            )
+            chunks.append(chunk)
+            
+            # Create chunks for images if present
+            for idx, img in enumerate(page.get('images', [])):
+                chunk = ParagraphChunk(
+                    document_id=self.current_document_id,
+                    documentChecksum=self.current_checksum,
+                    is_chart=True,
+                    page_number=page['number'],
+                    paragraph_or_chart_index=f"chart-{idx}",
+                    text_content=f"Chart or figure found on page {page['number']}",
+                    embedding_model=EMBEDDING_MODEL,
+                    pdf_loader=loader_type
+                )
+                chunks.append(chunk)
+        
+        return chunks
 
     def parse_pdf_old(self, file_path: Path, document_checksum: str) -> List[ParagraphChunk]:
         """Parse a PDF file and return a list of chunks."""
