@@ -45,3 +45,4 @@ logs/
 temp/ 
 instructions.md
 myenv
+markdown/*

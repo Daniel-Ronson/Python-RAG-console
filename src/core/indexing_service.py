@@ -55,7 +55,8 @@ class IndexingService:
                     "paragraph_or_chart_index": chunk.paragraph_or_chart_index,
                     "text_content": chunk.text_content,
                     "embedding_model": chunk.embedding_model,
-                    "embedding": chunk.embedding
+                    "embedding": chunk.embedding,
+                    "pdf_loader": chunk.pdf_loader
                 }
             ])
         
