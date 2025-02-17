@@ -15,32 +15,20 @@ class DoclingPDFLoader(BasePDFLoader):
         # Step 1: Convert PDF to Markdown
         markdown_text = self.convert_to_markdown(file_path)
         
-        # Step 2: Split into pages
-        pages = self._split_into_pages(markdown_text)
-        
-        # Step 3 & 4: Process each page into chunks
-        processed_pages = []
-        for page_num, page_content in enumerate(pages, 1):
-            chunks = self._process_page_content(page_content, page_num)
-            processed_pages.append({
-                'number': page_num,
-                'text': page_content,
-                'chunks': chunks
-            })
+        # Process entire document as one piece to maintain context
+        chunks = self._process_content(markdown_text)
         
         return {
-            'pages': processed_pages,
+            'pages': [{
+                'number': 1,  # Single "page" containing all chunks
+                'text': markdown_text,
+                'chunks': chunks
+            }],
             'metadata': {'source': file_path}
         }
 
-    def _split_into_pages(self, markdown_text: str) -> List[str]:
-        """Split markdown text into pages based on page break markers."""
-        # Assuming page breaks are marked with horizontal rules (---)
-        pages = re.split(r'\n-{3,}\n', markdown_text)
-        return [page.strip() for page in pages if page.strip()]
-
-    def _process_page_content(self, content: str, page_num: int) -> List[Dict]:
-        """Process page content into semantic chunks with headers as metadata and table extraction."""
+    def _process_content(self, content: str) -> List[Dict]:
+        """Process content into semantic chunks with headers as metadata and table extraction."""
         try:
             # Extract tables separately
             tables = self._extract_tables(content)
@@ -68,6 +56,7 @@ class DoclingPDFLoader(BasePDFLoader):
             )
 
             # Process each Document object
+            current_offset = 0
             for doc_idx, doc in enumerate(header_splits):
                 if len(doc.page_content) > 2000:
                     # Split large content into smaller chunks
@@ -76,27 +65,29 @@ class DoclingPDFLoader(BasePDFLoader):
                         chunk = {
                             'type': 'text',
                             'content': sub_chunk,
-                            'page_number': page_num,
+                            'offset': current_offset,  # Store character offset
                             'chunk_index': f"{doc_idx}-{sub_idx}",
                             'header_1': doc.metadata.get('Header 1', ''),
                             'header_2': doc.metadata.get('Header 2', ''),
                             'header_3': doc.metadata.get('Header 3', '')
                         }
+                        current_offset += len(sub_chunk)
                         chunks.append(chunk)
                 else:
                     # Use original chunk if it's small enough
                     chunk = {
                         'type': 'text',
                         'content': doc.page_content,
-                        'page_number': page_num,
+                        'offset': current_offset,  # Store character offset
                         'chunk_index': doc_idx,
                         'header_1': doc.metadata.get('Header 1', ''),
                         'header_2': doc.metadata.get('Header 2', ''),
                         'header_3': doc.metadata.get('Header 3', '')
                     }
+                    current_offset += len(doc.page_content)
                     chunks.append(chunk)
 
-            logger.debug(f"Split page {page_num} into {len(chunks)} chunks")
+            logger.debug(f"Split document into {len(chunks)} chunks")
 
             # Add extracted tables as separate chunks
             for idx, table in enumerate(tables):
@@ -104,23 +95,28 @@ class DoclingPDFLoader(BasePDFLoader):
                     'type': 'table',
                     'content': table['table_text'],
                     'table_title': table['title'],
-                    'page_number': page_num,
+                    'offset': content.find(table['table_text']),  # Find table's position
                     'chunk_index': f"table-{idx}"
                 })
 
             return chunks
             
         except Exception as e:
-            logger.error(f"Error in DoclingPDFLoader._process_page_content: {str(e)}")
+            logger.error(f"Error in DoclingPDFLoader._process_content: {str(e)}")
             # If header splitting fails, try fallback method
             try:
                 split_texts = self._fallback_split(content, max_length=2000)
-                chunks = [{
-                    'type': 'text',
-                    'content': text,
-                    'page_number': page_num,
-                    'chunk_index': idx
-                } for idx, text in enumerate(split_texts)]
+                current_offset = 0
+                chunks = []
+                for idx, text in enumerate(split_texts):
+                    chunk = {
+                        'type': 'text',
+                        'content': text,
+                        'offset': current_offset,
+                        'chunk_index': idx
+                    }
+                    current_offset += len(text)
+                    chunks.append(chunk)
                 return chunks
             except Exception as inner_e:
                 logger.error(f"Fallback splitting failed: {str(inner_e)}")

@@ -50,36 +50,23 @@ class PDFParser:
         # Get the loader type directly from the factory
         loader_type = PDFLoaderFactory.get_loader_type()
         
-        # Process each page from the loader output
-        for page in doc_data['pages']:
-            # Create text chunk
+        # Process all chunks (now in a single "page")
+        page = doc_data['pages'][0]  # Only one "page" containing all chunks
+        for chunk_data in page.get('chunks', []):
             chunk = ParagraphChunk(
                 document_id=self.current_document_id,
                 documentChecksum=self.current_checksum,
-                is_chart=False,
-                page_number=page['number'],
-                paragraph_or_chart_index=f"p{page['number']}",
-                text_content=page['text'],
+                is_chart=(chunk_data.get('type') == 'table' or chunk_data.get('type') == 'image'),
+                page_number=chunk_data.get('offset', 0),  # Use offset instead of page number
+                paragraph_or_chart_index=str(chunk_data.get('chunk_index')),
+                text_content=chunk_data.get('content'),
                 embedding_model=EMBEDDING_MODEL,
                 pdf_loader=loader_type
             )
             chunks.append(chunk)
-            
-            # Create chunks for images if present
-            for idx, img in enumerate(page.get('images', [])):
-                chunk = ParagraphChunk(
-                    document_id=self.current_document_id,
-                    documentChecksum=self.current_checksum,
-                    is_chart=True,
-                    page_number=page['number'],
-                    paragraph_or_chart_index=f"chart-{idx}",
-                    text_content=f"Chart or figure found on page {page['number']}",
-                    embedding_model=EMBEDDING_MODEL,
-                    pdf_loader=loader_type
-                )
-                chunks.append(chunk)
         
         return chunks
+
 
     def parse_pdf_old(self, file_path: Path, document_checksum: str) -> List[ParagraphChunk]:
         """Parse a PDF file and return a list of chunks."""
