@@ -100,8 +100,10 @@ class CLI:
                         pdf_file, 
                         file_checksums[pdf_file]
                     )
-                    
-                    # Generate embeddings for chunks
+
+                    #log debug how many chunks we have in the given pddf file
+                    print(f"Creating {len(chunks)} embeddings from {pdf_file.name}")
+
                     chunks = self.embedding_service.embed_chunks(chunks)
                     
                     # Index chunks in OpenSearch
