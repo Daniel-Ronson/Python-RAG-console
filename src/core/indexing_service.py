@@ -138,3 +138,23 @@ class IndexingService:
             }
         except Exception as e:
             raise Exception(f"Failed to delete documents: {str(e)}") 
+
+    def delete_all_documents(self) -> dict:
+        """Delete all documents from the index."""
+        try:
+            response = self.client.delete_by_query(
+                index=INDEX_NAME,
+                body={
+                    "query": {
+                        "match_all": {}
+                    }
+                },
+                refresh=True  # Ensure deletion is immediately visible
+            )
+            
+            return {
+                'total_deleted': response['deleted'],
+                'total_failed': len(response.get('failures', []))
+            }
+        except Exception as e:
+            raise Exception(f"Failed to delete all documents: {str(e)}") 

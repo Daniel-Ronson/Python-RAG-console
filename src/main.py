@@ -161,33 +161,43 @@ class CLI:
             print(f"{Fore.RED}Error getting index status: {str(e)}{Style.RESET_ALL}")
 
     def invalidate_documents(self, path: str):
-        """Invalidate (delete) documents from the index."""
+        """Remove documents from the index."""
         try:
-            target = Path(path)
-            documents_to_invalidate = []
-
-            if target.is_file():
-                if target.suffix.lower() == '.pdf':
-                    documents_to_invalidate.append(target.name)
-                else:
-                    print(f"{Fore.RED}Error: Not a PDF file: {target}{Style.RESET_ALL}")
+            if path.lower() == "all":
+                # Confirm with user before proceeding
+                confirm = input(f"{Fore.RED}WARNING: This will delete ALL documents from the index. Are you sure? (y/N): {Style.RESET_ALL}")
+                if confirm.lower() != 'y':
+                    print("Operation cancelled.")
                     return
-            elif target.is_dir():
-                # Get all PDF files in directory
-                documents_to_invalidate = [
-                    pdf.name for pdf in target.glob("*.pdf")
-                ]
-            else:
-                print(f"{Fore.RED}Error: Path does not exist: {target}{Style.RESET_ALL}")
+                
+                # Delete all documents
+                result = self.indexing_service.delete_all_documents()
+                print(f"\n{Fore.GREEN}Successfully deleted all documents from index:")
+                print(f"Total deleted: {result['total_deleted']}")
+                if result.get('total_failed', 0) > 0:
+                    print(f"{Fore.RED}Failed deletions: {result['total_failed']}{Style.RESET_ALL}")
                 return
 
-            if not documents_to_invalidate:
+            # Original document-specific invalidation logic
+            path_obj = Path(path)
+            if path_obj.is_file():
+                if path_obj.suffix.lower() != '.pdf':
+                    print(f"{Fore.RED}Error: File must be a PDF{Style.RESET_ALL}")
+                    return
+                files_to_invalidate = [path_obj]
+            elif path_obj.is_dir():
+                files_to_invalidate = list(path_obj.glob("*.pdf"))
+            else:
+                print(f"{Fore.RED}Error: Path does not exist{Style.RESET_ALL}")
+                return
+            
+            if not files_to_invalidate:
                 print(f"{Fore.YELLOW}No PDF files found to invalidate.{Style.RESET_ALL}")
                 return
 
             # Confirm with user
-            print(f"\nFound {len(documents_to_invalidate)} documents to invalidate:")
-            for doc in documents_to_invalidate:
+            print(f"\nFound {len(files_to_invalidate)} documents to invalidate:")
+            for doc in files_to_invalidate:
                 print(f"- {doc}")
             
             confirm = input(f"\n{Fore.YELLOW}Are you sure you want to invalidate these documents? (y/N): {Style.RESET_ALL}").lower()
@@ -197,11 +207,11 @@ class CLI:
 
             # Delete documents
             print("\nInvalidating documents...")
-            result = self.indexing_service.delete_by_document_ids(documents_to_invalidate)
+            result = self.indexing_service.delete_by_document_ids([doc.name for doc in files_to_invalidate])
             
             # Report results
             print(f"\n{Fore.GREEN}Invalidation complete:{Style.RESET_ALL}")
-            print(f"Documents processed: {len(documents_to_invalidate)}")
+            print(f"Documents processed: {len(files_to_invalidate)}")
             print(f"Chunks deleted: {result['total_deleted']}")
             
             if result['total_failed']:
