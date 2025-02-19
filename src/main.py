@@ -29,6 +29,9 @@ logger = logging.getLogger(__name__)
 # Set specific loggers to desired levels
 logging.getLogger('src.core.indexing_service').setLevel(logging.INFO)
 logging.getLogger('opensearchpy').setLevel(logging.WARNING)  # Reduce noise from opensearch
+logging.getLogger('opensearch').setLevel(logging.WARNING)    # Additional OpenSearch logger
+logging.getLogger('elastic_transport').setLevel(logging.WARNING)  # Transport layer logs
+logging.getLogger('httpx').setLevel(logging.WARNING)  # Suppress httpx request logs
 
 class CLI:
     def __init__(self):
