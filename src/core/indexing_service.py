@@ -9,6 +9,9 @@ from ..config.settings import (
     VECTOR_DIMENSION
 )
 from ..models.chunk import ParagraphChunk
+import logging
+
+logger = logging.getLogger(__name__)
 
 class IndexingService:
     def __init__(self):
@@ -25,7 +28,7 @@ class IndexingService:
             mapping = {
                 "mappings": {
                     "properties": {
-                        "document_id": {"type": "keyword"},
+                        "title": {"type": "keyword"},
                         "documentChecksum": {"type": "keyword"},
                         "is_chart": {"type": "boolean"},
                         "page_number": {"type": "integer"},
@@ -43,25 +46,45 @@ class IndexingService:
 
     def index_chunks(self, chunks: List[ParagraphChunk]):
         """Index a list of chunks into OpenSearch."""
-        bulk_data = []
-        for chunk in chunks:
-            bulk_data.extend([
-                {"index": {"_index": INDEX_NAME}},
-                {
-                    "document_id": chunk.document_id,
-                    "documentChecksum": chunk.documentChecksum,
-                    "is_chart": chunk.is_chart,
-                    "page_number": chunk.page_number,
-                    "paragraph_or_chart_index": chunk.paragraph_or_chart_index,
-                    "text_content": chunk.text_content,
-                    "embedding_model": chunk.embedding_model,
-                    "embedding": chunk.embedding,
-                    "pdf_loader": chunk.pdf_loader
+        try:
+            bulk_data = []
+            for chunk in chunks:
+                # Each chunk should only create one entry
+                bulk_data.extend([
+                    # This is the operation metadata
+                    {"index": {"_index": INDEX_NAME}},
+                    # This is the actual document data
+                    {
+                        "title": chunk.title,
+                        "documentChecksum": chunk.documentChecksum,
+                        "is_chart": chunk.is_chart,
+                        "page_number": chunk.page_number,
+                        "paragraph_or_chart_index": chunk.paragraph_or_chart_index,
+                        "text_content": chunk.text_content,
+                        "embedding_model": chunk.embedding_model,
+                        "embedding": chunk.embedding,
+                        "pdf_loader": chunk.pdf_loader
+                    }
+                ])
+            
+            if bulk_data:
+                # Add debug logging
+                logger.debug(f"Indexing {len(bulk_data)//2} chunks")  # Divide by 2 because each chunk has 2 entries
+                response = self.client.bulk(body=bulk_data)
+                
+                # Check for errors
+                if response.get('errors'):
+                    error_items = [item for item in response['items'] if item.get('index', {}).get('error')]
+                    logger.error(f"Bulk indexing had {len(error_items)} errors: {error_items}")
+                    
+                return {
+                    'indexed': len(bulk_data)//2,
+                    'errors': len(error_items) if response.get('errors') else 0
                 }
-            ])
-        
-        if bulk_data:
-            self.client.bulk(body=bulk_data) 
+                
+        except Exception as e:
+            logger.error(f"Error during bulk indexing: {str(e)}")
+            raise
 
     def get_index_stats(self) -> dict:
         """Get statistics about the index."""

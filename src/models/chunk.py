@@ -3,7 +3,7 @@ from typing import List, Optional
 
 @dataclass
 class ParagraphChunk:
-    document_id: str
+    title: str
     documentChecksum: str
     is_chart: bool
     page_number: int

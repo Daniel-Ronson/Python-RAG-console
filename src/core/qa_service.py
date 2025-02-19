@@ -77,7 +77,7 @@ class QAService:
             body={
                 "query": hybrid_query,
                 "size": MAX_CHUNKS_PER_QUERY,
-                "_source": ["text_content", "document_id", "page_number"],
+                "_source": ["text_content", "title", "page_number"],
                 "min_score": 0.7  # OpenSearch returns only hits with _score >= 0.7
             }
         )
@@ -181,7 +181,7 @@ class QAService:
         reference_legend = "\n\nReferences:"
         for idx, hit in enumerate(similar_chunks):
             source = hit['_source']
-            reference_legend += f"\n[Ref{idx+1}] Document: {source['document_id']}, Page: {source['page_number']}"
+            reference_legend += f"\n[Ref{idx+1}] Document: {source['title']}, Page: {source['page_number']}"
 
         response_with_refs = response + reference_legend
         return self._highlight_references(response_with_refs) 

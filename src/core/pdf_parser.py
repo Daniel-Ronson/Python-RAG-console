@@ -54,7 +54,7 @@ class PDFParser:
         page = doc_data['pages'][0]  # Only one "page" containing all chunks
         for chunk_data in page.get('chunks', []):
             chunk = ParagraphChunk(
-                document_id=self.current_document_id,
+                title=self.current_document_id,
                 documentChecksum=self.current_checksum,
                 is_chart=(chunk_data.get('type') == 'table' or chunk_data.get('type') == 'image'),
                 page_number=chunk_data.get('offset', 0),  # Use offset instead of page number
@@ -101,7 +101,7 @@ class PDFParser:
             # Create chunks for text paragraphs
             for idx, paragraph in enumerate(paragraphs):
                 chunk = ParagraphChunk(
-                    document_id=self.current_document_id,
+                    title=self.current_document_id,
                     documentChecksum=self.current_checksum,
                     is_chart=False,
                     page_number=page_num,
@@ -115,7 +115,7 @@ class PDFParser:
             image_list = page.get_images()
             for img_idx, img in enumerate(image_list):
                 chunk = ParagraphChunk(
-                    document_id=self.current_document_id,
+                    title=self.current_document_id,
                     documentChecksum=self.current_checksum,
                     is_chart=True,
                     page_number=page_num,
