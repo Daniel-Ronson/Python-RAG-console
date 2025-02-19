@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List, Optional
 from colorama import init, Fore, Style
 from tqdm import tqdm
+import logging
 
 from src.core import qa_service, pdf_parser, indexing_service, embedding_service
 from src.config.settings import IS_DEV
@@ -12,6 +13,22 @@ from src.config import settings  # Import the settings module
 
 # Initialize colorama for cross-platform colored output
 init()
+
+# Configure logging at the start of your application
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()  # This will output to console
+    ]
+)
+
+# Get the logger
+logger = logging.getLogger(__name__)
+
+# Set specific loggers to desired levels
+logging.getLogger('src.core.indexing_service').setLevel(logging.INFO)
+logging.getLogger('opensearchpy').setLevel(logging.WARNING)  # Reduce noise from opensearch
 
 class CLI:
     def __init__(self):
