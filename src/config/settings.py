@@ -17,11 +17,11 @@ INDEX_NAME = os.getenv('OPENSEARCH_INDEX', 'papers-index')
 
 # OpenAI settings
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-EMBEDDING_MODEL = os.getenv('EMBEDDING_MODEL', 'text-embedding-ada-002')
-COMPLETION_MODEL = os.getenv('COMPLETION_MODEL', 'gpt-3.5-turbo')
+EMBEDDING_MODEL = os.getenv('EMBEDDING_MODEL', 'text-embedding-3-small')
+COMPLETION_MODEL = os.getenv('COMPLETION_MODEL', 'gpt-4o-mini')
 
 # Vector settings
-VECTOR_DIMENSION = 1536  # For Ada-002 embeddings
+VECTOR_DIMENSION = 1536
 MAX_CHUNKS_PER_QUERY = int(os.getenv('MAX_CHUNKS_PER_QUERY', '5'))
 
 # PDF Loader Configuration
