@@ -1,5 +1,5 @@
 from typing import List
-from opensearchpy import OpenSearch
+from opensearchpy import OpenSearch, helpers
 from ..config.settings import (
     OPENSEARCH_HOST,
     OPENSEARCH_PORT,
@@ -12,6 +12,7 @@ from ..models.chunk import ParagraphChunk
 import logging
 
 logger = logging.getLogger(__name__)
+chunking_strategy = "basic" #todo: make this dynamic
 
 class IndexingService:
     def __init__(self):
@@ -21,11 +22,17 @@ class IndexingService:
             use_ssl=False
         )
         self.ensure_index()
+        self.chunking_strategy = chunking_strategy
 
     def ensure_index(self):
         """Create the index if it doesn't exist."""
         if not self.client.indices.exists(INDEX_NAME):
             mapping = {
+                "settings": {
+                    "index": {
+                        "knn": True  # Enable k-NN for knn_vector fields
+                    }
+                },
                 "mappings": {
                     "properties": {
                         "title": {"type": "keyword"},
@@ -38,23 +45,24 @@ class IndexingService:
                         "embedding": {
                             "type": "knn_vector",
                             "dimension": VECTOR_DIMENSION
-                        }
+                        },
+                        "pdf_loader": {"type": "keyword"}
                     }
                 }
             }
             self.client.indices.create(INDEX_NAME, body=mapping)
+            logger.debug(f"Created index {INDEX_NAME} with mapping: {mapping}")
 
     def index_chunks(self, chunks: List[ParagraphChunk]):
-        """Index a list of chunks into OpenSearch."""
+        """Index a list of chunks into OpenSearch using the bulk helper."""
         try:
-            bulk_data = []
-            for chunk in chunks:
-                # Each chunk should only create one entry
-                bulk_data.extend([
-                    # This is the operation metadata
-                    {"index": {"_index": INDEX_NAME}},
-                    # This is the actual document data
-                    {
+            # Build bulk actions list with deterministic _id for deduplication
+            actions = [
+                {
+                    "_op_type": "index",
+                    "_index": INDEX_NAME,
+                    "_id": f"{chunk.documentChecksum}-{chunk.embedding_model}-{chunk.page_number}-{chunk.paragraph_or_chart_index}-{chunk.pdf_loader}-{self.chunking_strategy}",
+                    "_source": {
                         "title": chunk.title,
                         "documentChecksum": chunk.documentChecksum,
                         "is_chart": chunk.is_chart,
@@ -65,23 +73,20 @@ class IndexingService:
                         "embedding": chunk.embedding,
                         "pdf_loader": chunk.pdf_loader
                     }
-                ])
-            
-            if bulk_data:
-                # Add debug logging
-                logger.debug(f"Indexing {len(bulk_data)//2} chunks")  # Divide by 2 because each chunk has 2 entries
-                response = self.client.bulk(body=bulk_data)
-                
-                # Check for errors
-                if response.get('errors'):
-                    error_items = [item for item in response['items'] if item.get('index', {}).get('error')]
-                    logger.error(f"Bulk indexing had {len(error_items)} errors: {error_items}")
-                    
-                return {
-                    'indexed': len(bulk_data)//2,
-                    'errors': len(error_items) if response.get('errors') else 0
                 }
-                
+                for chunk in chunks
+            ]
+            
+            if actions:
+                logger.info(f"Indexing {len(actions)} chunks")
+                success, failed = helpers.bulk(self.client, actions, stats_only=True)
+                logger.info(f"Successfully indexed: {success} documents")
+                if failed:
+                    logger.error(f"Encountered {failed} errors during bulk indexing")
+                return {
+                    'indexed': success,
+                    'errors': failed
+                }
         except Exception as e:
             logger.error(f"Error during bulk indexing: {str(e)}")
             raise
